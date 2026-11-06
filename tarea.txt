@@ -1,0 +1,70 @@
+Trabajo Práctico Integrador: Sistema de Gestión de Biblioteca
+
+Objetivo
+    Desarrollar una aplicación web full stack para gestionar los libros de una biblioteca y saber en qué estante se encuentra cada uno.
+
+Descripción del sistema
+    Los libros se ubican en estantes. Cada libro debe tener un autor y un género relacionados, y debe poder indicarse si forma parte de una saga. El catálogo debe poder filtrarse por género, autor o año de publicación.
+    El sistema tendrá un único usuario administrador. No hay roles ni registro de nuevos usuarios.
+
+Requisitos del Back-endTecnologías obligatorias
+    Node.js + Express.js
+    TypeORM
+    bcrypt para el encriptado de contraseñas
+    JWT para la autenticación
+
+Funcionalidades
+    Login del usuario administrador. La contraseña debe almacenarse encriptada con bcrypt y el login debe devolver un token JWT.
+    CRUD completo de libros, autores, géneros, sagas y estantes.
+    Cada libro debe estar relacionado con un autor, un género y un estante, y opcionalmente con una saga.
+    Listado de libros con filtros por género, autor y año de publicación, combinables entre sí.
+    Al consultar un libro debe poder verse su autor, género, saga (si tiene) y el estante donde se encuentra.
+    Las rutas deben estar protegidas mediante la verificación del token JWT.
+
+Arquitectura y buenas prácticas
+    Organización del código en capas (rutas, controladores, servicios, entidades).
+    Middleware de autenticación que valide el token JWT.
+    Middleware de manejo de errores centralizado, con códigos de estado HTTP apropiados.
+    Middleware de logging de las peticiones (método, ruta, estado y tiempo de respuesta).
+    Logger de eventos y errores de la aplicación, con niveles de severidad.
+    Variables sensibles (secreto JWT, credenciales de base de datos, puerto) en variables de entorno.
+    Validación de los datos recibidos y respuestas JSON consistentes.
+    Consantes definidas en archivos propios.
+
+Requisitos del Front-endTecnologías obligatorias
+    React
+    React Router para el ruteo
+    Axios para la conexión con el back-end
+    Yup para la validación de datos
+
+Funcionalidades
+    Pantalla de login.
+    Listado de libros con filtros por género, autor y año de publicación.
+    Visualización del detalle de un libro, incluyendo el estante donde se encuentra.
+    Alta, edición y eliminación de libros, autores, géneros, sagas y estantes.
+    Ventana de visualización para eventos (logs)
+    Cierre de sesión.
+
+Autenticación
+    El token JWT debe almacenarse en el localStorage.
+    Todas las peticiones al back deben enviar el token para autenticarse.
+    Las rutas privadas deben estar protegidas y redirigir al login si no hay sesión activa.
+    Si el token es inválido o expiró, se debe cerrar la sesión y redirigir al login.
+
+Organización y buenas prácticas
+    Aplicación componentizada, con componentes reutilizables.
+    Uso de custom hooks para encapsular la lógica reutilizable.
+    Validación de todos los formularios con Yup, mostrando mensajes de error claros.
+    Constantes separadas en archivos correspondientes (rutas, endpoints, mensajes, claves de storage, etc.). No se admiten valores fijos escritos directamente en los componentes.
+    Las llamadas a Axios deben centralizarse en una capa de servicios, no hacerse directamente desde los componentes.
+    Manejo de estados de carga y error en la interfaz.
+
+Entrega
+Criterios de evaluación
+    Correcto funcionamiento de todas las funcionalidades pedidas.
+    Uso adecuado de TypeORM y de las relaciones entre entidades.
+    Implementación correcta de la autenticación (bcrypt, JWT, localStorage, rutas privadas).
+    Middlewares de errores y logging.
+    Componentización, custom hooks y ruteo en el front-end.
+    Validaciones con Yup y uso de constantes en archivos separados.
+    Calidad, orden y legibilidad del código.

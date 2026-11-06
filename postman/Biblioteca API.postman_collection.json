@@ -1,0 +1,196 @@
+{
+  "info": {
+    "_postman_id": "d7927ec4-e09d-45cd-8b10-a64532b86cff",
+    "name": "Sistema de gestión de biblioteca",
+    "description": "Flujo de prueba para la API de biblioteca. Ejecutar los requests en orden con Collection Runner: la colección guarda automáticamente el JWT y los IDs creados para usar en los siguientes requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api" },
+    { "key": "token", "value": "" },
+    { "key": "runId", "value": "" },
+    { "key": "autorId", "value": "" },
+    { "key": "generoId", "value": "" },
+    { "key": "sagaId", "value": "" },
+    { "key": "estanteId", "value": "" },
+    { "key": "libroId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Salud y autenticación",
+      "item": [
+        {
+          "name": "Salud de la API",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/salud"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('La API está disponible', function () { pm.response.to.have.status(200); });", "pm.test('Respuesta JSON con estado ok', function () { pm.expect(pm.response.json().datos.estado).to.eql('ok'); });"] } }]
+        },
+        {
+          "name": "Login de administrador",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"correo\": \"{{correoAdministrador}}\",\n  \"clave\": \"{{claveAdministrador}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/autenticacion/login"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Login correcto', function () { pm.response.to.have.status(200); });", "const cuerpo = pm.response.json();", "pm.test('La respuesta contiene un token JWT', function () { pm.expect(cuerpo.datos.token).to.be.a('string').and.not.empty; });", "pm.collectionVariables.set('token', cuerpo.datos.token);", "pm.collectionVariables.set('runId', Date.now().toString());"] } }]
+        },
+        {
+          "name": "Sin token, rechazar acceso al catálogo",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{baseUrl}}/libros"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('La ruta protegida responde 401 sin token', function () { pm.response.to.have.status(401); });"] } }]
+        }
+      ]
+    },
+    {
+      "name": "2. Crear datos para la prueba",
+      "item": [
+        {
+          "name": "Crear autor",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Autora Postman\",\n  \"apellido\": \"{{runId}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/autores"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Autor creado', function () { pm.response.to.have.status(201); });", "pm.collectionVariables.set('autorId', pm.response.json().datos.id);"] } }]
+        },
+        {
+          "name": "Crear género",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Género Postman {{runId}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/generos"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Género creado', function () { pm.response.to.have.status(201); });", "pm.collectionVariables.set('generoId', pm.response.json().datos.id);"] } }]
+        },
+        {
+          "name": "Crear saga",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Saga Postman {{runId}}\",\n  \"descripcion\": \"Saga creada para probar la API\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/sagas"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Saga creada', function () { pm.response.to.have.status(201); });", "pm.collectionVariables.set('sagaId', pm.response.json().datos.id);"] } }]
+        },
+        {
+          "name": "Crear estante",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"codigo\": \"PM-{{runId}}\",\n  \"ubicacion\": \"Estante creado para probar la API\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/estantes"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Estante creado', function () { pm.response.to.have.status(201); });", "pm.collectionVariables.set('estanteId', pm.response.json().datos.id);"] } }]
+        }
+      ]
+    },
+    {
+      "name": "3. CRUD de libros y filtros",
+      "item": [
+        {
+          "name": "Crear libro",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"titulo\": \"Libro Postman {{runId}}\",\n  \"anioPublicacion\": 2020,\n  \"autor\": {{autorId}},\n  \"genero\": {{generoId}},\n  \"estante\": {{estanteId}},\n  \"saga\": {{sagaId}},\n  \"descripcion\": \"Libro creado durante la prueba de integración\",\n  \"isbn\": \"PM-{{runId}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/libros"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Libro creado', function () { pm.response.to.have.status(201); });", "pm.collectionVariables.set('libroId', pm.response.json().datos.id);"] } }]
+        },
+        {
+          "name": "Listar libros filtrando por género, autor y año",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/libros?genero={{generoId}}&autor={{autorId}}&anio=2020"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Filtros combinados aplicados', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().datos).to.be.an('array').with.lengthOf(1); });"] } }]
+        },
+        {
+          "name": "Consultar detalle y relaciones del libro",
+          "request": { "method": "GET", "url": "{{baseUrl}}/libros/{{libroId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["const libro = pm.response.json().datos;", "pm.test('Detalle incluye autor, género, saga y estante', function () { pm.response.to.have.status(200); pm.expect(libro.autor.id).to.eql(Number(pm.collectionVariables.get('autorId'))); pm.expect(libro.genero.id).to.eql(Number(pm.collectionVariables.get('generoId'))); pm.expect(libro.saga.id).to.eql(Number(pm.collectionVariables.get('sagaId'))); pm.expect(libro.estante.id).to.eql(Number(pm.collectionVariables.get('estanteId'))); });"] } }]
+        },
+        {
+          "name": "Actualizar libro",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"titulo\": \"Libro actualizado {{runId}}\",\n  \"anioPublicacion\": 2021\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/libros/{{libroId}}"
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Libro actualizado', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().datos.anioPublicacion).to.eql(2021); });"] } }]
+        },
+        {
+          "name": "Eliminar libro",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/libros/{{libroId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Libro eliminado', function () { pm.response.to.have.status(200); });"] } }]
+        }
+      ]
+    },
+    {
+      "name": "4. CRUD de catálogos",
+      "item": [
+        {
+          "name": "Autores",
+          "item": [
+            { "name": "Listar autores", "request": { "method": "GET", "url": "{{baseUrl}}/autores" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Lista de autores disponible', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().datos).to.be.an('array'); });"] } }] },
+            { "name": "Consultar autor", "request": { "method": "GET", "url": "{{baseUrl}}/autores/{{autorId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Autor encontrado', function () { pm.response.to.have.status(200); });"] } }] },
+            { "name": "Actualizar autor", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"apellido\":\"Actualizado {{runId}}\"}", "options": { "raw": { "language": "json" } } }, "url": "{{baseUrl}}/autores/{{autorId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Autor actualizado', function () { pm.response.to.have.status(200); });"] } }] },
+            { "name": "Eliminar autor", "request": { "method": "DELETE", "url": "{{baseUrl}}/autores/{{autorId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Autor eliminado', function () { pm.response.to.have.status(200); });"] } }] }
+          ]
+        },
+        {
+          "name": "Géneros",
+          "item": [
+            { "name": "Listar géneros", "request": { "method": "GET", "url": "{{baseUrl}}/generos" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Lista de géneros disponible', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().datos).to.be.an('array'); });"] } }] },
+            { "name": "Consultar género", "request": { "method": "GET", "url": "{{baseUrl}}/generos/{{generoId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Género encontrado', function () { pm.response.to.have.status(200); });"] } }] },
+            { "name": "Actualizar género", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"nombre\":\"Género actualizado {{runId}}\"}", "options": { "raw": { "language": "json" } } }, "url": "{{baseUrl}}/generos/{{generoId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Género actualizado', function () { pm.response.to.have.status(200); });"] } }] },
+            { "name": "Eliminar género", "request": { "method": "DELETE", "url": "{{baseUrl}}/generos/{{generoId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Género eliminado', function () { pm.response.to.have.status(200); });"] } }] }
+          ]
+        },
+        {
+          "name": "Sagas",
+          "item": [
+            { "name": "Listar sagas", "request": { "method": "GET", "url": "{{baseUrl}}/sagas" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Lista de sagas disponible', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().datos).to.be.an('array'); });"] } }] },
+            { "name": "Consultar saga", "request": { "method": "GET", "url": "{{baseUrl}}/sagas/{{sagaId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Saga encontrada', function () { pm.response.to.have.status(200); });"] } }] },
+            { "name": "Actualizar saga", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"descripcion\":\"Descripción actualizada {{runId}}\"}", "options": { "raw": { "language": "json" } } }, "url": "{{baseUrl}}/sagas/{{sagaId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Saga actualizada', function () { pm.response.to.have.status(200); });"] } }] },
+            { "name": "Eliminar saga", "request": { "method": "DELETE", "url": "{{baseUrl}}/sagas/{{sagaId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Saga eliminada', function () { pm.response.to.have.status(200); });"] } }] }
+          ]
+        },
+        {
+          "name": "Estantes",
+          "item": [
+            { "name": "Listar estantes", "request": { "method": "GET", "url": "{{baseUrl}}/estantes" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Lista de estantes disponible', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().datos).to.be.an('array'); });"] } }] },
+            { "name": "Consultar estante", "request": { "method": "GET", "url": "{{baseUrl}}/estantes/{{estanteId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Estante encontrado', function () { pm.response.to.have.status(200); });"] } }] },
+            { "name": "Actualizar estante", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"ubicacion\":\"Ubicación actualizada {{runId}}\"}", "options": { "raw": { "language": "json" } } }, "url": "{{baseUrl}}/estantes/{{estanteId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Estante actualizado', function () { pm.response.to.have.status(200); });"] } }] },
+            { "name": "Eliminar estante", "request": { "method": "DELETE", "url": "{{baseUrl}}/estantes/{{estanteId}}" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Estante eliminado', function () { pm.response.to.have.status(200); });"] } }] }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Eventos",
+      "item": [
+        {
+          "name": "Consultar eventos",
+          "request": { "method": "GET", "url": "{{baseUrl}}/eventos?limite=20" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Eventos disponibles', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().datos).to.be.an('array'); });"] } }]
+        }
+      ]
+    }
+  ]
+}
